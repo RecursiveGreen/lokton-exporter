@@ -50,14 +50,21 @@ def get_image_data(filepath):
     return data[image_start:image_end]
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('input')
-parser.add_argument('output')
-parser.add_argument("-f", "--format",
-                    help="save as this image format",
+description = 'Convert FINAL FANTASY VX \'.ss\' files to standard image files.'
+
+parser = argparse.ArgumentParser(description=description)
+parser.add_argument('input',
+                    help='Input file/directory with \'.ss\' files.')
+parser.add_argument('output',
+                    help='Output file/directory to save to.')
+parser.add_argument('-f', '--format',
+                    help='Save as this image format. (Default: JPEG)',
                     choices=list(IMAGE_FORMATS),
                     default='JPEG',
                     type=str.upper)
+parser.add_argument('-v', '--verbose',
+                    help='Output more information during conversion.',
+                    action='store_true')
 args = parser.parse_args()
 
 input_path = Path(args.input)
@@ -89,11 +96,21 @@ else:
                              'output_path': new_output,
                              'data': get_image_data(f)})
 
+count = 0
+
 for image in workload:
     if image['data']:
+        if args.verbose:
+            print('{} -> {}'.format(image['input_path'],
+                                    image['output_path']))
         if args.format == 'JPEG':
             with open(image['output_path'], 'wb') as f:
                 f.write(image['data'])
         else:
             Image.open(io.BytesIO(image['data'])).save(image['output_path'],
                                                        format=args.format)
+        count += 1
+
+if args.verbose:
+    print('{} image{} successfully converted.'.format(count,
+                                                      ('s', '')[count == 1]))
